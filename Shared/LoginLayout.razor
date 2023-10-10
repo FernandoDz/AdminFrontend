@@ -1,0 +1,17 @@
+﻿@inherits LayoutComponentBase
+
+<style>
+    .h {
+        height: 100%;
+    }
+</style>
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout Class="d-flex">
+    <MudMainContent Class="pa-0 d-flex flex-column align-center justify-center">
+        @Body
+    </MudMainContent>
+</MudLayout>

@@ -1,0 +1,83 @@
+﻿@layout LoginLayout
+@page "/"
+
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+@inject HttpClient Http
+
+<MudImage ObjectFit="ObjectFit.Contain" Src="/images/fullcolor.png" Width="200" Height="150" Alt="Swedish Farm House" Elevation="0" Class="rounded-lg ma-4" />
+<MudPaper Class="pa-2 ma-4" Elevation="0">
+    <EditForm Model="@user" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator />
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField Label="Usuario" Class="mt-3"
+                @bind-Value="user.Login" For="@(() => user.Login)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField Label="Clave" Class="mt-3"
+                @bind-Value="user.Password" For="@(() => user.Password)" InputType="InputType.Password" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Login</MudButton>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+    @if (showLeaveAlert)
+    {
+        <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe(true))">No se reconocen las credenciales ingresadas.</MudAlert>
+    }
+</MudPaper>
+
+@code {
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private bool showLeaveAlert = false;
+
+    UserLogin user = new UserLogin();
+    bool success;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateTask;
+        var user = authState.User;
+        if (user.Identity != null)
+        {
+            if (user.Identity.IsAuthenticated)
+            {
+                NavigationManager.NavigateTo($"/home");
+            }
+        }
+    }
+
+    protected async Task OnValidSubmit()
+    {
+        var httpResponse = await Http.PostAsJsonAsync<UserLogin>("usuario/login", user);
+
+        if (!(httpResponse.StatusCode == System.Net.HttpStatusCode.OK))
+        {
+            showLeaveAlert = true;
+        }
+        else
+        {
+            var contentResponse = await httpResponse.Content.ReadAsStringAsync();
+            var token = contentResponse;
+            if (token != null)
+            {
+                await _localStorageService.SetItemAsync("token", token);
+                NavigationManager.NavigateTo($"home", forceLoad: true);
+            }
+            else
+            {
+                showLeaveAlert = true;
+            }
+        }
+    }
+
+    private void CloseMe(bool value)
+    {
+        showLeaveAlert = false;
+    }
+}

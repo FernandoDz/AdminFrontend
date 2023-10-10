@@ -1,0 +1,74 @@
+﻿@page "/departamento/agregar"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+
+<MudText Typo="Typo.h2" Class="ml">Nuevo Departamento</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <EditForm Model="depto" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Nombre" @bind-Value="depto.Nombre" For="@(() => depto.Nombre)" />
+                        <MudDivider />
+                        <MudSelect Variant="Variant.Outlined" Label="Zona" AnchorOrigin="Origin.BottomCenter"
+                        @bind-Value="depto.Zona" For="@(() => depto.Zona)">
+                            <MudSelectItem Value="1">Occidental</MudSelectItem>
+                            <MudSelectItem Value="2">Central</MudSelectItem>
+                            <MudSelectItem Value="3">Oriental</MudSelectItem>
+                        </MudSelect>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Guardar</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+            @if (showLeaveAlert)
+            {
+                <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe(true))">No se pudo guardar.</MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    bool success;
+    private bool showLeaveAlert = false;
+    Departamento depto = new Departamento();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await save();
+        success = true;
+        StateHasChanged();
+    }
+
+    private async Task save()
+    {
+
+        var httpResponse = await Http.PostAsJsonAsync<Departamento>("departamento", depto);
+
+        if (!(httpResponse.StatusCode == System.Net.HttpStatusCode.OK))
+        {
+            showLeaveAlert = true;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("departamento/index");
+        }
+    }
+
+    private void CloseMe(bool value)
+    {
+        showLeaveAlert = false;
+    }
+}
