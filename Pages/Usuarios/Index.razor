@@ -1,5 +1,71 @@
 ﻿@page "/usuario/index"
+@inject HttpClient httpClient
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+
+<MudText Typo="Typo.h2" Class="ml">Usuarios</MudText>
+
+<MudTable Items="@usuarios" Hover="true" Bordered="true" Striped="true">
+    <ToolBarContent>
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="goAdd" />
+        <MudSpacer />
+        <MudTextField @bind-Value="searchText" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Nombre</MudTh>
+        <MudTh>Apellido</MudTh>
+        <MudTh>Login</MudTh>
+        <MudTh>Estado</MudTh>
+        <MudTh>Acciones</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+        <MudTd DataLabel="Apellido">@context.Apellido</MudTd>
+        <MudTd DataLabel="Login">@context.Login</MudTd>
+        @if (context.Estatus == 1)
+        {
+            <MudTd DataLabel="Estatus">Activo</MudTd>
+        }
+        else
+        {
+            <MudTd DataLabel="Estatus">Inactivo</MudTd>
+        }
+
+        <MudTd>
+            <MudButton Link="@($"/usuario/editar/{context.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Tertiary"
+                       Class="text-center">Editar</MudButton>
+            <MudButton Link="@($"/usuario/eliminar/{context.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning"
+                       Class="text-center">Eliminar</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
 
 @code {
+    private IEnumerable<Usuario> usuarios = new List<Usuario>();
+    private string searchText = "";
+    private Usuario usuario = new Usuario();
 
+    protected override async Task OnInitializedAsync()
+    {
+        httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
+        await getAll();
+    }
+
+    private async Task getAll()
+    {
+        var httpResponse = await httpClient.PostAsJsonAsync("usuario/buscar", usuario);
+        string respString = await httpResponse.Content.ReadAsStringAsync();
+        usuarios = JsonSerializer.Deserialize<IEnumerable<Usuario>>(respString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+    }
+
+    private void goAdd()
+    {
+        NavigationManager.NavigateTo("usuario/agregar");
+    }
 }

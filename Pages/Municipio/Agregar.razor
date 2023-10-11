@@ -1,5 +1,80 @@
-﻿<h3>Agregar</h3>
+﻿@page "/municipio/agregar"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+
+<MudText Typo="Typo.h2" Class="ml">Nuevo Municipio</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <EditForm Model="municipio" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Nombre" @bind-Value="municipio.Nombre" For="@(() => municipio.Nombre)" />
+                        <MudTextField Label="Descripcion" @bind-Value="municipio.Descripcion" For="@(() => municipio.Descripcion)" />
+                        <MudTextField Label="Imagen" @bind-Value="municipio.Imagen" For="@(() => municipio.Imagen)" />
+                        <MudSelect Variant="Variant.Outlined" Label="Departamento" AnchorOrigin="Origin.BottomCenter"
+                        @bind-Value="municipio.IdDepartamento" For="@(() => municipio.IdDepartamento)">
+                            @foreach (var item in departamentos)
+                            {
+                                <MudSelectItem Value="@item.Id">@item.Nombre</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Guardar</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+            @if (showLeaveAlert)
+            {
+                <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe(true))">No se pudo guardar.</MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
+    private IEnumerable<Departamento> departamentos = new List<Departamento>();
+    private bool showLeaveAlert = false;
+    Municipio municipio = new Municipio();
 
+    protected override async Task OnInitializedAsync()
+    {
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
+        await getDepartamentos();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await save();
+    }
+
+    private async Task save()
+    {
+        var httpResponse = await Http.PostAsJsonAsync<Municipio>("municipio", municipio);
+
+        if (!(httpResponse.StatusCode == System.Net.HttpStatusCode.OK))
+        {
+            showLeaveAlert = true;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("municipio/index");
+        }
+    }
+
+    private void CloseMe(bool value)
+    {
+        showLeaveAlert = false;
+    }
+
+    private async Task getDepartamentos()
+    {
+        var httpResponse = await Http.GetStringAsync("departamento");
+        departamentos = JsonSerializer.Deserialize<IEnumerable<Departamento>>(httpResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+    }
 }

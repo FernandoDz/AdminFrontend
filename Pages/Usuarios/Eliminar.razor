@@ -1,5 +1,8 @@
-﻿<h3>Eliminar</h3>
+﻿@page "/usuario/eliminar/{id:int}"
+
+<h3>Eliminar</h3>
 
 @code {
-
+    [Parameter]
+    public int id { get; set; }
 }
